@@ -3,8 +3,15 @@ import 'dart:ui';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_chatapps/event/event_person.dart';
+
+import 'package:flutter_chatapps/event/event_storage.dart';
+import 'package:flutter_chatapps/event/event_storage.dart';
 import 'package:flutter_chatapps/model/person.dart';
 import 'package:flutter_chatapps/pages/forget_password_page.dart';
+import 'package:flutter_chatapps/pages/fragment/list_chat_room.dart';
+import 'package:flutter_chatapps/pages/fragment/list_contact_room.dart';
+import 'package:flutter_chatapps/pages/login_page.dart';
 import 'package:flutter_chatapps/utils/prefs.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,12 +24,16 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   Person? _myPerson;
 
+  List<Widget> _listFragment = [
+    ListChat(),
+    ListContact(),
+  ];
+
   void getMyPerson() async {
     Person? person = await Prefs.getPerson();
     setState(() {
       _myPerson = person;
     });
-    print(_myPerson!.name);
   }
 
   void pickAndCropPhoto() async {
@@ -51,10 +62,46 @@ class _DashboardPageState extends State<DashboardPage> {
             minimumAspectRatio: 1.0,
           ));
       if (croppedFile != null) {
-        //Method
+        EventStorage.editPhoto(
+          filePhoto: File(croppedFile.path),
+          oldUrl: _myPerson!.photo,
+          uid: _myPerson!.uid,
+        );
+        EventPerson.getPerson(_myPerson!.uid).then((person) {
+          Prefs.setPerson(person);
+        });
       }
     }
     getMyPerson();
+  }
+
+  void logout() async {
+    var value = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Logout'),
+        content: Text('You sure for logout?'),
+        actions: [
+          FlatButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('No'),
+          ),
+          FlatButton(
+            onPressed: () => Navigator.pop(context, 'logout'),
+            child: Text('Yes'),
+          ),
+        ],
+      ),
+    );
+    if (value == 'logout') {
+      Prefs.clear();
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    }
   }
 
   @override
@@ -81,7 +128,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         drawer: menuDrawer(),
         body: Center(
-          child: Text('dashboard'),
+          child: TabBarView(children: _listFragment),
         ),
       ),
     );
@@ -99,10 +146,19 @@ class _DashboardPageState extends State<DashboardPage> {
                   borderRadius: BorderRadius.circular(100),
                   child: FadeInImage(
                     placeholder: AssetImage('assets/icon_profile.png'),
-                    image: AssetImage('assets/icon_profile.png'),
+                    image:
+                        NetworkImage(_myPerson == null ? '' : _myPerson!.photo),
                     width: 100,
                     height: 100,
                     fit: BoxFit.cover,
+                    imageErrorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/icon_profile.png',
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      );
+                    },
                   ),
                 ),
                 SizedBox(width: 16),
@@ -148,7 +204,9 @@ class _DashboardPageState extends State<DashboardPage> {
             trailing: Icon(Icons.navigate_next),
           ),
           ListTile(
-            onTap: () {},
+            onTap: () {
+              pickAndCropPhoto();
+            },
             leading: Icon(Icons.image),
             title: Text('Edit Photo'),
             trailing: Icon(Icons.navigate_next),
@@ -161,7 +219,9 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           Divider(height: 1, thickness: 1),
           ListTile(
-            onTap: () {},
+            onTap: () {
+              logout();
+            },
             leading: Icon(Icons.logout),
             title: Text('Logout'),
           ),

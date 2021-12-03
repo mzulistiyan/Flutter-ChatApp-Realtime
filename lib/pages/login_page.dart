@@ -41,10 +41,12 @@ class _LoginPageState extends State<LoginPage> {
           EventPerson.getPerson(userCredential.user!.uid).then((person) {
             Prefs.setPerson(person);
           });
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => DashboardPage()),
-          );
+          Future.delayed(Duration(milliseconds: 1700), () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => DashboardPage()),
+            );
+          });
           _controllerEmail.clear();
           _controllerPassword.clear();
         } else {

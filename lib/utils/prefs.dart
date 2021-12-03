@@ -1,13 +1,11 @@
-// @dart=2.9
-
 import 'dart:convert';
 
 import 'package:flutter_chatapps/model/person.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Prefs {
-  static Future<Person> getPerson() async {
-    Person person;
+  static Future<Person?> getPerson() async {
+    Person? person;
     SharedPreferences pref = await SharedPreferences.getInstance();
     try {
       String personString = pref.getString('person');
