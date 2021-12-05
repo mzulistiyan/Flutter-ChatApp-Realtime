@@ -1,4 +1,3 @@
-// @dart=2.9
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,10 +5,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart';
 
 class EventStorage {
-  static void editPhoto({String oldUrl, File filePhoto, String uid}) async {
-    if (oldUrl != '') deleteOldFile(oldUrl);
+  static void editPhoto({String? oldUrl, File? filePhoto, String? uid}) async {
+    if (oldUrl != '') deleteOldFile(oldUrl!);
     try {
-      String fileName = basename(filePhoto.path);
+      String fileName = basename(filePhoto!.path);
       TaskSnapshot taskSnapshot = await FirebaseStorage.instance
           .ref()
           .child('$uid/$fileName')
@@ -36,13 +35,13 @@ class EventStorage {
   }
 
   static Future<String> uploadMessageImageAndGetUrl({
-    File filePhoto,
-    String myUid,
-    String personUid,
+    File? filePhoto,
+    String? myUid,
+    String? personUid,
   }) async {
     String imageUrl = '';
     try {
-      String fileName = basename(filePhoto.path);
+      String fileName = basename(filePhoto!.path);
       TaskSnapshot taskSnapshot = await FirebaseStorage.instance
           .ref()
           .child('$myUid/$personUid/$fileName')

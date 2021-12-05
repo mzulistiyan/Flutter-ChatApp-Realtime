@@ -1,5 +1,5 @@
 class Chat {
-  final int dateTIme;
+  final int dateTime;
   final bool isRead;
   final String message;
   final String type;
@@ -7,7 +7,7 @@ class Chat {
   final String uidSender;
 
   Chat({
-    required this.dateTIme,
+    required this.dateTime,
     required this.isRead,
     required this.message,
     required this.type,
@@ -16,7 +16,7 @@ class Chat {
   });
 
   factory Chat.fromJson(Map<String, dynamic> json) => Chat(
-        dateTIme: json['dateTIme'] ?? 0,
+        dateTime: json['dateTime'] ?? 0,
         isRead: json['isRead'] ?? false,
         message: json['message'] ?? '',
         type: json['type'] ?? '',
@@ -25,7 +25,7 @@ class Chat {
       );
 
   Map<String, dynamic> toJson() => {
-        'dateTIme': dateTIme,
+        'dateTime': dateTime,
         'isRead': isRead,
         'message': message,
         'type': type,

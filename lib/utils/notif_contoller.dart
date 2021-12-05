@@ -44,12 +44,12 @@ class NotifController {
   }
 
   static Future<void> sendNotification({
-    required final String type,
-    required final String myLastChat,
-    required final String myUid,
-    required final String myName,
-    required final String photo,
-    required final String personToken,
+    final String type = '',
+    final String myLastChat = '',
+    final String myUid = '',
+    final String myName = '',
+    final String photo = '',
+    final String personToken = '',
   }) async {
     String serverKey =
         'AAAAtWsba64:APA91bGtsg6CBV0DvOEDPSfEn-GDEvSio7POJx1JtUm2RCL6YhAuYHCROg4cBL7dNoSxvQDDttV9nlv55Yqpkm15irKqq6Kp2zpl-VLJMa9aqzUJmwUXTNUiDzb2aIpgRyacklxHph1n';

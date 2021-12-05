@@ -8,7 +8,7 @@ class Prefs {
     Person? person;
     SharedPreferences pref = await SharedPreferences.getInstance();
     try {
-      String personString = pref.getString('person');
+      String? personString = pref.getString('person');
       if (personString != null) {
         Map<String, dynamic> personJson = json.decode(personString);
         person = Person.fromJson(personJson);

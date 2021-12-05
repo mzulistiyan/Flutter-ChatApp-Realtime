@@ -1,4 +1,3 @@
-// @dart=2.9
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_chatapps/model/person.dart';
 
@@ -11,7 +10,7 @@ class EventPerson {
         .catchError((onError) => print(onError));
     if (querySnapshot != null && querySnapshot.docs.length > 0) {
       if (querySnapshot.docs.length > 0) {
-        return querySnapshot.docs[0].data()['uid'];
+        return querySnapshot.docs[0]['uid'];
       } else {
         return '';
       }
@@ -68,17 +67,32 @@ class EventPerson {
   }
 
   static Future<Person> getPerson(String uid) async {
-    Person person;
+    Person? person;
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('person')
           .doc(uid)
           .get()
           .catchError((onError) => print(onError));
-      person = Person.fromJson(documentSnapshot.data());
+      person = Person.fromJson(documentSnapshot.data() as Map<String, dynamic>);
     } catch (e) {
       print(e);
     }
-    return person;
+    return person!;
+  }
+
+  static Future<String> getPersonToken(String uid) async {
+    String token = '';
+    try {
+      DocumentSnapshot response = await FirebaseFirestore.instance
+          .collection('person')
+          .doc(uid)
+          .get()
+          .catchError((onError) => print(onError));
+      token = response['token'];
+    } catch (e) {
+      print(e);
+    }
+    return token;
   }
 }

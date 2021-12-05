@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.black,
-              content: Text('Success'),
+              content: Text('Loading...'),
             ),
           );
           String token = await NotifController.getTokenFromDevice();
@@ -41,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
           EventPerson.getPerson(userCredential.user!.uid).then((person) {
             Prefs.setPerson(person);
           });
-          Future.delayed(Duration(milliseconds: 1700), () {
+          Future.delayed(Duration(milliseconds: 2000), () {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => DashboardPage()),

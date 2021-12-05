@@ -34,6 +34,11 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _myPerson = person;
     });
+    if (_myPerson == null) {
+      print('Person Null');
+    } else {
+      print(_myPerson!.email);
+    }
   }
 
   void pickAndCropPhoto() async {
