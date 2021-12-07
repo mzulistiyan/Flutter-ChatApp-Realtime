@@ -77,7 +77,10 @@ class _ChatRoomPageState extends State<ChatRoomPage>
       uidReceiver: widget.room.uid,
       uidSender: _myPerson!.uid,
     );
-
+    bool personInRoom = await EventChatRoom.checkIsPersonInRoom(
+      myUid: _myPerson!.uid,
+      personUid: widget.room.uid,
+    );
     Room roomSender = Room(
       email: _myPerson!.email,
       inRoom: true,
@@ -91,7 +94,7 @@ class _ChatRoomPageState extends State<ChatRoomPage>
     );
     Room roomReceiver = Room(
       email: widget.room.email,
-      inRoom: false,
+      inRoom: personInRoom,
       lastChat: message,
       lastDateTime: chat.dateTime,
       lastUid: _myPerson!.uid,
@@ -159,14 +162,17 @@ class _ChatRoomPageState extends State<ChatRoomPage>
 
     String token = await EventPerson.getPersonToken(widget.room.uid);
     if (token != '') {
-      //Notif
-
+      // await NotifController.sendNotification(
+      //   myLastChat: message,
+      //   myName: _myPerson!.name,
+      //   myUid: _myPerson!.uid,
+      //   personToken: token,
+      //   photo: _myPerson!.photo,
+      //   type: type,
+      // );
     }
     print(token);
-    bool personInRoom = await EventChatRoom.checkIsPersonInRoom(
-      myUid: _myPerson!.uid,
-      personUid: widget.room.uid,
-    );
+
     if (personInRoom) {
       EventChatRoom.updateChatIsRead(
         chatId: chat.dateTime.toString(),
