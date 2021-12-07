@@ -120,4 +120,94 @@ class EventChatRoom {
       print(e);
     }
   }
+
+  static void setMeInRoom(String myUid, String personUid) {
+    try {
+      FirebaseFirestore.instance
+          .collection('person')
+          .doc(personUid)
+          .collection('room')
+          .doc(myUid)
+          .update({'inRoom': true}).then((value) {
+        _setAllMessageRead(
+          isSender: true,
+          myUid: myUid,
+          personUid: personUid,
+        );
+        _setAllMessageRead(
+          isSender: false,
+          myUid: myUid,
+          personUid: personUid,
+        );
+      }).catchError((onError) => print(onError));
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  static void setMeOutRoom(String myUid, String personUid) {
+    try {
+      FirebaseFirestore.instance
+          .collection('person')
+          .doc(personUid)
+          .collection('room')
+          .doc(myUid)
+          .update({'inRoom': false})
+          .then((value) {})
+          .catchError((onError) => print(onError));
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  static void _setAllMessageRead({
+    bool? isSender,
+    String? myUid,
+    String? personUid,
+  }) {
+    try {
+      FirebaseFirestore.instance
+          .collection('person')
+          .doc(isSender! ? personUid : myUid)
+          .collection('room')
+          .doc(isSender ? myUid : personUid)
+          .collection('chat')
+          .where('isRead', isEqualTo: false)
+          .get()
+          .then((querySnapshot) {
+        for (var docChat in querySnapshot.docs) {
+          if (docChat.data()['uidSender'] == personUid) {
+            docChat.reference
+                .update({'isRead': true})
+                .then((value) => null)
+                .catchError((onError) => print(onError));
+          }
+        }
+      }).catchError((onError) => print(onError));
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  static deleteMessage({
+    bool? isSender,
+    String? myUid,
+    String? personUid,
+    String? chatId,
+  }) {
+    try {
+      FirebaseFirestore.instance
+          .collection('person')
+          .doc(isSender! ? personUid : myUid)
+          .collection('room')
+          .doc(isSender ? myUid : personUid)
+          .collection('chat')
+          .doc(chatId)
+          .update({'message': ''})
+          .then((value) => null)
+          .catchError((onError) => print(onError));
+    } catch (e) {
+      print(e);
+    }
+  }
 }

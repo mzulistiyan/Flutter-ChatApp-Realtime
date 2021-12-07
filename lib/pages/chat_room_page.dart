@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:clipboard/clipboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chatapps/event/event_chat_room.dart';
@@ -12,9 +13,11 @@ import 'package:flutter_chatapps/pages/fragment/list_chat_room.dart';
 import 'package:flutter_chatapps/utils/notif_contoller.dart';
 import 'package:flutter_chatapps/utils/prefs.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
+import 'package:grouped_list/grouped_list.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:photo_view/photo_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ChatRoomPage extends StatefulWidget {
@@ -34,6 +37,21 @@ class _ChatRoomPageState extends State<ChatRoomPage>
   Stream<QuerySnapshot>? _streamChat;
   String _inputMessage = '';
   var _controllerMessage = TextEditingController();
+  Chat? _selectedChat;
+
+  void getSelectedDefault() {
+    setState(() {
+      _selectedChat = Chat(
+        dateTime: 0,
+        isRead: false,
+        message: '',
+        type: '',
+        uidReceiver: '',
+        uidSender: '',
+      );
+    });
+  }
+
   void getMyPerson() async {
     Person? person = await Prefs.getPerson();
     setState(() {
@@ -203,10 +221,31 @@ class _ChatRoomPageState extends State<ChatRoomPage>
     getMyPerson();
   }
 
+  void deleteSelectedMessage() {
+    if (_selectedChat!.type == 'image') {
+      EventStorage.deleteOldFile(_selectedChat!.message);
+    }
+
+    EventChatRoom.deleteMessage(
+      chatId: _selectedChat!.dateTime.toString(),
+      isSender: true,
+      myUid: _myPerson!.uid,
+      personUid: widget.room.uid,
+    );
+    EventChatRoom.deleteMessage(
+      chatId: _selectedChat!.dateTime.toString(),
+      isSender: false,
+      myUid: _myPerson!.uid,
+      personUid: widget.room.uid,
+    );
+    getSelectedDefault();
+  }
+
   @override
   void initState() {
     getMyPerson();
     WidgetsBinding.instance!.addObserver(this);
+    getSelectedDefault();
     super.initState();
   }
 
@@ -273,6 +312,31 @@ class _ChatRoomPageState extends State<ChatRoomPage>
             ),
           ],
         ),
+        actions: [
+          SizedBox(
+            child: _selectedChat!.message != '' && _selectedChat!.type == 'text'
+                ? IconButton(
+                    icon: Icon(Icons.copy),
+                    onPressed: () {
+                      FlutterClipboard.copy(_selectedChat!.message)
+                          .then((value) => print('copied'));
+                      getSelectedDefault();
+                    },
+                  )
+                : null,
+          ),
+          SizedBox(
+            child: _selectedChat!.message != '' &&
+                    _selectedChat!.uidSender == _myPerson!.uid
+                ? IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      deleteSelectedMessage();
+                    },
+                  )
+                : null,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -287,15 +351,86 @@ class _ChatRoomPageState extends State<ChatRoomPage>
                 return Center(child: CircularProgressIndicator());
               }
               if (snapshot.data != null && snapshot.data!.docs.length > 0) {
-                List<QueryDocumentSnapshot> ListChat = snapshot.data!.docs;
-                return ListView.builder(
-                  itemCount: ListChat.length,
-                  itemBuilder: (context, index) {
+                List<QueryDocumentSnapshot> listChat = snapshot.data!.docs;
+                return GroupedListView<QueryDocumentSnapshot, String>(
+                  elements: listChat,
+                  groupBy: (element) {
+                    Chat chat =
+                        Chat.fromJson(element.data() as Map<String, dynamic>);
+                    DateTime chatDateTime =
+                        DateTime.fromMicrosecondsSinceEpoch(chat.dateTime);
+                    String dateTime =
+                        DateFormat('yyyy/MM/dd').format(chatDateTime);
+                    return dateTime;
+                  },
+                  groupSeparatorBuilder: (value) {
+                    String group = '';
+                    String today =
+                        DateFormat('yyyy/MM/dd').format(DateTime.now());
+                    String yesterday = DateFormat('yyyy/MM/dd')
+                        .format(DateTime.now().subtract(Duration(days: 1)));
+                    if (value == today) {
+                      group = 'Today';
+                    } else if (value == yesterday) {
+                      group = 'Yesterday';
+                    } else {
+                      group = value;
+                    }
+                    return Align(
+                      alignment: Alignment.topCenter,
+                      child: Container(
+                        height: 30,
+                        width: 100,
+                        alignment: Alignment.center,
+                        margin: EdgeInsets.only(top: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Text(
+                          group,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    );
+                  },
+                  itemComparator: (item1, item2) =>
+                      item1.id.compareTo(item2.id),
+                  useStickyGroupSeparators: true,
+                  floatingHeader: true,
+                  reverse: true,
+                  order: GroupedListOrder.DESC,
+                  indexedItemBuilder: (context, element, index) {
+                    final reverseIndex = listChat.length - 1 - index;
                     Chat chat = Chat.fromJson(
-                        ListChat[index].data() as Map<String, dynamic>);
-                    return Container(
-                        margin: EdgeInsets.fromLTRB(16, 2, 16, 2),
-                        child: itemChat(chat));
+                        listChat[reverseIndex].data() as Map<String, dynamic>);
+                    return GestureDetector(
+                      onLongPress: () {
+                        if (chat.message != '') {
+                          setState(() {
+                            _selectedChat = chat;
+                          });
+                        }
+                      },
+                      onTap: () {
+                        getSelectedDefault();
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(
+                          bottom: reverseIndex == listChat.length - 1 ? 80 : 0,
+                        ),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          2,
+                          16,
+                          2,
+                        ),
+                        color: _selectedChat!.dateTime == chat.dateTime
+                            ? Colors.blue.withOpacity(0.5)
+                            : Colors.transparent,
+                        child: itemChat(chat),
+                      ),
+                    );
                   },
                 );
               } else {
@@ -395,35 +530,6 @@ class _ChatRoomPageState extends State<ChatRoomPage>
 
   Widget messageText(Chat chat) {
     return Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.7,
-        ),
-        decoration: BoxDecoration(
-          color: chat.message == ''
-              ? Colors.blue.withOpacity(0.3)
-              : chat.uidSender == _myPerson!.uid
-                  ? Colors.blue
-                  : Colors.blue[800],
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(
-              chat.uidSender == _myPerson!.uid ? 10 : 0,
-            ),
-            topRight: Radius.circular(
-              chat.uidSender == _myPerson!.uid ? 0 : 10,
-            ),
-            bottomLeft: Radius.circular(10),
-            bottomRight: Radius.circular(10),
-          ),
-        ),
-        padding: EdgeInsets.all(8),
-        child: Text(
-          chat.message,
-          style: TextStyle(color: Colors.white),
-        ));
-  }
-
-  Widget messageImage(Chat chat) {
-    return Container(
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width * 0.7,
       ),
@@ -445,32 +551,121 @@ class _ChatRoomPageState extends State<ChatRoomPage>
         ),
       ),
       padding: EdgeInsets.all(8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(
-            chat.uidSender == _myPerson!.uid ? 10 : 0,
-          ),
-          topRight: Radius.circular(
-            chat.uidSender == _myPerson!.uid ? 0 : 10,
-          ),
-          bottomLeft: Radius.circular(10),
-          bottomRight: Radius.circular(10),
+      child: ParsedText(
+        text: chat.message == '' ? 'message was deleted' : chat.message,
+        style: TextStyle(
+          color: chat.message == '' ? Colors.grey[600] : Colors.white,
         ),
-        child: FadeInImage(
-          placeholder: AssetImage('assets/icon_profile.png'),
-          image: NetworkImage(chat.message),
-          width: MediaQuery.of(context).size.width * 0.5,
-          height: MediaQuery.of(context).size.width * 0.5,
-          fit: BoxFit.cover,
-          imageErrorBuilder: (context, error, stackTrace) {
-            return Image.asset(
-              'assets/icon_profile.png',
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
-            );
-          },
+        parse: [
+          MatchText(
+              type: ParsedType.EMAIL,
+              style: TextStyle(
+                color: Colors.yellow,
+              ),
+              onTap: (url) {
+                launch("mailto:" + url);
+              }),
+          MatchText(
+              type: ParsedType.URL,
+              style: TextStyle(
+                color: Colors.yellow,
+              ),
+              onTap: (url) async {
+                var a = await canLaunch(url);
+                if (a) launch(url);
+              }),
+          MatchText(
+              type: ParsedType.PHONE,
+              style: TextStyle(
+                color: Colors.yellow,
+              ),
+              onTap: (url) {
+                launch("tel:" + url);
+              }),
+        ],
+      ),
+    );
+  }
+
+  Widget messageImage(Chat chat) {
+    return GestureDetector(
+      onTap: () => showImageFull(chat.message),
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.7,
         ),
+        decoration: BoxDecoration(
+          color: chat.message == ''
+              ? Colors.blue.withOpacity(0.3)
+              : chat.uidSender == _myPerson!.uid
+                  ? Colors.blue
+                  : Colors.blue[800],
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(
+              chat.uidSender == _myPerson!.uid ? 10 : 0,
+            ),
+            topRight: Radius.circular(
+              chat.uidSender == _myPerson!.uid ? 0 : 10,
+            ),
+            bottomLeft: Radius.circular(10),
+            bottomRight: Radius.circular(10),
+          ),
+        ),
+        padding: EdgeInsets.all(8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(
+              chat.uidSender == _myPerson!.uid ? 10 : 0,
+            ),
+            topRight: Radius.circular(
+              chat.uidSender == _myPerson!.uid ? 0 : 10,
+            ),
+            bottomLeft: Radius.circular(10),
+            bottomRight: Radius.circular(10),
+          ),
+          child: FadeInImage(
+            placeholder: AssetImage('assets/icon_profile.png'),
+            image: NetworkImage(chat.message),
+            width: MediaQuery.of(context).size.width * 0.5,
+            height: MediaQuery.of(context).size.width * 0.5,
+            fit: BoxFit.cover,
+            imageErrorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                'assets/icon_profile.png',
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void showImageFull(String imageUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Stack(
+        children: [
+          PhotoView(
+            enableRotation: true,
+            imageProvider: NetworkImage(imageUrl),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top,
+            left: 0,
+            right: 0,
+            child: AppBar(
+              backgroundColor: Colors.black.withOpacity(0.5),
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

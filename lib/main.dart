@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_chatapps/pages/dashboard_page.dart';
 import 'package:flutter_chatapps/pages/login_page.dart';
 import 'package:flutter_chatapps/utils/notif_contoller.dart';
@@ -22,7 +23,10 @@ Future<void> main() async {
     sound: true,
   );
   NotifController.initLocalNotification();
-  runApp(const MyApp());
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((_) {
+    runApp(MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
