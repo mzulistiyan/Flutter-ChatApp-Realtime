@@ -8,6 +8,7 @@ import 'package:flutter_chatapps/event/event_person.dart';
 import 'package:flutter_chatapps/event/event_storage.dart';
 import 'package:flutter_chatapps/event/event_storage.dart';
 import 'package:flutter_chatapps/model/person.dart';
+import 'package:flutter_chatapps/pages/edit_profile_page.dart';
 import 'package:flutter_chatapps/pages/forget_password_page.dart';
 import 'package:flutter_chatapps/pages/fragment/list_chat_room.dart';
 import 'package:flutter_chatapps/pages/fragment/list_contact_room.dart';
@@ -23,6 +24,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   Person? _myPerson;
+  var _controllerPassword = TextEditingController();
 
   List<Widget> _listFragment = [
     ListChat(),
@@ -102,6 +104,65 @@ class _DashboardPageState extends State<DashboardPage> {
     if (value == 'logout') {
       Prefs.clear();
       await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    }
+  }
+
+  void deleteAccount() async {
+    var value = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return SimpleDialog(
+          titlePadding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+          contentPadding: EdgeInsets.all(16),
+          title: Text('Delete Account'),
+          children: [
+            TextField(
+              controller: _controllerPassword,
+              decoration: InputDecoration(
+                labelText: 'Password',
+              ),
+              textAlignVertical: TextAlignVertical.bottom,
+              obscureText: true,
+            ),
+            SizedBox(height: 16),
+            RaisedButton(
+              child: Text('Delete'),
+              color: Colors.blue,
+              textColor: Colors.white,
+              onPressed: () {
+                if (_controllerPassword.text != null &&
+                    _controllerPassword.text != '') {
+                  Navigator.pop(context, 'delete');
+                }
+              },
+            ),
+            OutlineButton(
+              child: Text('Close'),
+              textColor: Colors.blue,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
+    );
+    if (value == 'delete') {
+      Navigator.pop(context);
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _myPerson!.email,
+        password: _controllerPassword.text,
+      );
+      if (userCredential != null) {
+        userCredential.user!.delete().then((value) {
+          EventPerson.deleteAccount(_myPerson!.uid);
+        });
+      }
+      _controllerPassword.clear();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
@@ -192,7 +253,15 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           ListTile(
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => EditProfilePage(
+                          person: _myPerson!,
+                        )),
+              ).then((value) => getMyPerson());
+            },
             leading: Icon(Icons.person),
             title: Text('Edit Profile'),
             trailing: Icon(Icons.navigate_next),
@@ -218,7 +287,9 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           Divider(height: 1, thickness: 1),
           ListTile(
-            onTap: () {},
+            onTap: () {
+              deleteAccount();
+            },
             leading: Icon(Icons.delete_forever),
             title: Text('Delete Account'),
           ),

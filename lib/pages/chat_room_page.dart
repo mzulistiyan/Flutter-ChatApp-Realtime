@@ -10,6 +10,7 @@ import 'package:flutter_chatapps/model/chat.dart';
 import 'package:flutter_chatapps/model/person.dart';
 import 'package:flutter_chatapps/model/room.dart';
 import 'package:flutter_chatapps/pages/fragment/list_chat_room.dart';
+import 'package:flutter_chatapps/pages/profile_page.dart';
 import 'package:flutter_chatapps/utils/notif_contoller.dart';
 import 'package:flutter_chatapps/utils/prefs.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
@@ -293,22 +294,42 @@ class _ChatRoomPageState extends State<ChatRoomPage>
         titleSpacing: 0,
         title: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(40),
-              child: FadeInImage(
-                placeholder: AssetImage('assets/icon_profile.png'),
-                image: NetworkImage(widget.room.photo),
-                width: 40,
-                height: 40,
-                fit: BoxFit.cover,
-                imageErrorBuilder: (context, error, stackTrace) {
-                  return Image.asset(
-                    'assets/icon_profile.png',
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                  );
-                },
+            GestureDetector(
+              onTap: () {
+                Person person = Person(
+                  email: widget.room.email,
+                  name: widget.room.name,
+                  photo: widget.room.photo,
+                  token: '',
+                  uid: widget.room.uid,
+                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(
+                      person: person,
+                      myUid: _myPerson!.uid,
+                    ),
+                  ),
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                child: FadeInImage(
+                  placeholder: AssetImage('assets/icon_profile.png'),
+                  image: NetworkImage(widget.room.photo),
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  imageErrorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      'assets/icon_profile.png',
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                ),
               ),
             ),
             SizedBox(width: 8),

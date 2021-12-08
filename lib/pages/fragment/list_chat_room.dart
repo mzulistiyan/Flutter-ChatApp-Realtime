@@ -5,6 +5,7 @@ import 'package:flutter_chatapps/model/chat.dart';
 import 'package:flutter_chatapps/model/person.dart';
 import 'package:flutter_chatapps/model/room.dart';
 import 'package:flutter_chatapps/pages/chat_room_page.dart';
+import 'package:flutter_chatapps/pages/profile_page.dart';
 import 'package:flutter_chatapps/utils/prefs.dart';
 import 'package:intl/intl.dart';
 
@@ -123,10 +124,20 @@ class _ListChatState extends State<ListChat> {
             children: [
               GestureDetector(
                 onTap: () {
+                  Person person = Person(
+                    email: room.email,
+                    name: room.name,
+                    photo: room.photo,
+                    token: '',
+                    uid: room.uid,
+                  );
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChatRoomPage(room: room),
+                      builder: (context) => ProfilePage(
+                        person: person,
+                        myUid: _myPerson!.uid,
+                      ),
                     ),
                   );
                 },

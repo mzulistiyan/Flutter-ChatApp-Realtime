@@ -5,6 +5,7 @@ import 'package:flutter_chatapps/event/event_person.dart';
 import 'package:flutter_chatapps/model/person.dart';
 import 'package:flutter_chatapps/model/room.dart';
 import 'package:flutter_chatapps/pages/chat_room_page.dart';
+import 'package:flutter_chatapps/pages/profile_page.dart';
 
 import 'package:flutter_chatapps/utils/prefs.dart';
 
@@ -128,7 +129,17 @@ class _ListContactState extends State<ListContact> {
   Widget itemContact(Person person) {
     return ListTile(
       leading: GestureDetector(
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProfilePage(
+                person: person,
+                myUid: _myPerson!.uid,
+              ),
+            ),
+          );
+        },
         child: SizedBox(
           width: 40,
           height: 40,

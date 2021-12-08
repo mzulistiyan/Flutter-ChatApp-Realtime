@@ -95,4 +95,53 @@ class EventPerson {
     }
     return token;
   }
+
+  static void deleteAccount(String myUid) async {
+    try {
+      // delete in person
+      FirebaseFirestore.instance
+          .collection('person')
+          .doc(myUid)
+          .delete()
+          .then((value) => null)
+          .catchError((onError) => print(onError));
+      // delete in contact
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('person').get();
+      querySnapshot.docs.forEach((QueryDocumentSnapshot queryDocumentSnapshot) {
+        queryDocumentSnapshot.reference
+            .collection('contact')
+            .where('uid', isEqualTo: myUid)
+            .get()
+            .then((value) {
+          value.docs.forEach((docContact) {
+            docContact.reference
+                .delete()
+                .then((value) => null)
+                .catchError((onError) => print(onError));
+          });
+        });
+      });
+      // delete in room
+      QuerySnapshot querySnapshot2 =
+          await FirebaseFirestore.instance.collection('person').get();
+      querySnapshot2.docs
+          .forEach((QueryDocumentSnapshot queryDocumentSnapshot) {
+        queryDocumentSnapshot.reference
+            .collection('room')
+            .where('uid', isEqualTo: myUid)
+            .get()
+            .then((value) {
+          value.docs.forEach((docRoom) {
+            docRoom.reference
+                .delete()
+                .then((value) => null)
+                .catchError((onError) => print(onError));
+          });
+        });
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
 }

@@ -52,7 +52,7 @@ class NotifController {
     final String personToken = '',
   }) async {
     String serverKey =
-        'AAAAtWsba64:APA91bGtsg6CBV0DvOEDPSfEn-GDEvSio7POJx1JtUm2RCL6YhAuYHCROg4cBL7dNoSxvQDDttV9nlv55Yqpkm15irKqq6Kp2zpl-VLJMa9aqzUJmwUXTNUiDzb2aIpgRyacklxHph1n';
+        'AAAAtWsba64:APA91bHLjVqOXTjyZyUj6jiwRq5GATX65OfE3Vgew6CRwsnWFYx12a-c5aoh4ZNsBbBrJ0cKV2lCeglkJWGyLKgWv1iV5Dl8RN9riA9_WsHGMKw9cYzrJ1QrM-J5Cgr0CToQoceJ21ky';
     try {
       await http.post(
         Uri.parse('https://fcm.googleapis.com/fcm/send'),
